@@ -6,8 +6,11 @@ const cors = require('cors');
 
 const app = express();
 
-const messages = [];
+
 app.use(cors());
+
+const users = [];
+const connections = [];
 
 const server = app.listen(8000, () => console.log("Server start"));
 
@@ -18,9 +21,18 @@ const io = socket(server, {
     }});
 
 io.on("connection", (socket) => {
+    connections.push(socket);
     socket.on("new message", ({message}) => {
-        socket.emit("message", message);
+        io.sockets.emit("message", message);
+    });
+
+
+
+    socket.on("disconnect", () => {
+        connections.splice(connections.indexOf(socket), 1);
     });
 });
+
+
 
 
