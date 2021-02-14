@@ -60,10 +60,15 @@ io.use((socket, next) => {
 
 
     socket.on("new message", (data) => {
+
+
         const newMessage = message({
             content: data.content,
             author: currentUser.id
         });
+        if (/https:\/\/www.youtube.com\/watch\?v=/ig.test(data.content)){
+            newMessage.video = data.content.replace(/https:\/\/www.youtube.com\/watch\?v=/gi, "")
+        }
         newMessage.save(() => {
             message.findById(newMessage._id).populate({
                 path: "author",
