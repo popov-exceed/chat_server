@@ -6,7 +6,7 @@ const bodyParser = require("body-parser")
 const connectToDb = require("./db");
 const router = require("./routes/auth");
 const jwt = require("jsonwebtoken");
-const {user} = require("./db/models");
+const {user, message} = require("./db/models");
 
 
 const ROOMS = {
@@ -29,7 +29,7 @@ connectToDb(process.env.DB_CONNECTION);
 
 const io = socket(server, {
     cors: {
-        origin: "http://localhost:3000",
+        origin: "*",
         methods: ["GET", "POST"]
     }});
 
@@ -43,13 +43,33 @@ io.use((socket, next) => {
     }
 
 
-}).on("connection", (socket) => {
+}).on("connection",async (socket) => {
     socket.join(ROOMS.ROOM_MAIN);
-    console.log("success connection", socket.id)
+    console.log("success connect")
+    const onlineUsers = await user.find({online: true});
+    const lastsMessages = await message.find().populate({
+        path: "author",
+        select: {
+            name: 1
+        }
+    });
+    socket.emit("connected", {onlineUsers,lastsMessages});
     const currentUser = users.find(user => user.session === socket.id);
     socket.on("new message", (data) => {
-        console.log(users)
-        io.to(ROOMS.ROOM_MAIN).emit("message", {message: data.message, author: currentUser.name, date: new Date()});
+        const newMessage = message({
+            content: data.content,
+            author: currentUser.id
+        });
+        newMessage.save( async (err,newMessage) => {
+           const userInDB = await user.findById(currentUser.id);
+            userInDB.messages.push(newMessage._id);
+           await userInDB.save();
+        })
+
+        io.to(ROOMS.ROOM_MAIN).emit("new message", {content: data.content, author: {
+            name: currentUser.name,
+                id: currentUser.id
+            }, date: new Date()});
     });
 
 
