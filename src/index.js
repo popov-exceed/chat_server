@@ -34,7 +34,6 @@ const io = socket(server, {
     }});
 
 io.use((socket, next) => {
-    console.log(socket.handshake.auth)
     if(socket.handshake.auth.token) {
         console.log()
         jwt.verify(socket.handshake.auth.token, process.env.SECRET_JWT, (err, decoded) => {
@@ -55,34 +54,35 @@ io.use((socket, next) => {
             name: 1
         }
     });
-    socket.emit("connected", {onlineUsers,lastsMessages});
+    socket.emit("connected", {onlineUsers, lastsMessages});
     const currentUser = users.find(user => user.session === socket.id);
+    io.to(ROOMS.ROOM_MAIN).emit("new user", currentUser);
     socket.on("new message", (data) => {
         const newMessage = message({
             content: data.content,
             author: currentUser.id
         });
-        newMessage.save( async (err,newMessage) => {
-           const userInDB = await user.findById(currentUser.id);
+        newMessage.save(async (err, newMessage) => {
+            const userInDB = await user.findById(currentUser.id);
             userInDB.messages.push(newMessage._id);
-           await userInDB.save();
+            await userInDB.save();
         })
 
-        io.to(ROOMS.ROOM_MAIN).emit("new message", {content: data.content, author: {
-            name: currentUser.name,
+        io.to(ROOMS.ROOM_MAIN).emit("new message", {
+            content: data.content, author: {
+                name: currentUser.name,
                 id: currentUser.id
-            }, date: new Date()});
+            }, date: new Date()
+        });
     });
-
 
 
     socket.on("disconnect", () => {
         const currentUser = users.find(user => user.session === socket.id);
         users.splice(users.indexOf(currentUser), 1);
         user.findOneAndUpdate({_id: currentUser.id}, {online: false}).then(() => console.log("success disconnection"));
-
-    });
-})
-
+        io.to(ROOMS.ROOM_MAIN).emit("user exit", currentUser.id);
+    })
+});
 
 
