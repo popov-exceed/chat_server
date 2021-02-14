@@ -34,7 +34,9 @@ const io = socket(server, {
     }});
 
 io.use((socket, next) => {
+    console.log(socket.handshake.auth)
     if(socket.handshake.auth.token) {
+        console.log()
         jwt.verify(socket.handshake.auth.token, process.env.SECRET_JWT, (err, decoded) => {
             err && next(new Error("Invalid token"));
             user.findOneAndUpdate({_id: decoded.userId}, {online: true}).then(() => next());
