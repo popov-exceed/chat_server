@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const userSchema = new Schema({
    name: { type: String, require: true, trim: true, unique: true},
     online: {type: Boolean, default: false},
-    messages: [{type: Schema.ObjectId, ref: "Message"}]
+    // readMessages: [{type: Schema.ObjectId, ref: "Message"}]
 });
 
 

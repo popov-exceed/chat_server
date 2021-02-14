@@ -35,7 +35,6 @@ const io = socket(server, {
 
 io.use((socket, next) => {
     if(socket.handshake.auth.token) {
-        console.log()
         jwt.verify(socket.handshake.auth.token, process.env.SECRET_JWT, (err, decoded) => {
             err && next(new Error("Invalid token"));
             user.findOneAndUpdate({_id: decoded.userId}, {online: true}).then(() => next());
@@ -57,25 +56,30 @@ io.use((socket, next) => {
     socket.emit("connected", {onlineUsers, lastsMessages});
     const currentUser = users.find(user => user.session === socket.id);
     io.to(ROOMS.ROOM_MAIN).emit("new user", currentUser);
+
+
+
     socket.on("new message", (data) => {
         const newMessage = message({
             content: data.content,
             author: currentUser.id
         });
-        newMessage.save(async (err, newMessage) => {
-            const userInDB = await user.findById(currentUser.id);
-            userInDB.messages.push(newMessage._id);
-            await userInDB.save();
-        })
-
-        io.to(ROOMS.ROOM_MAIN).emit("new message", {
-            content: data.content, author: {
-                name: currentUser.name,
-                id: currentUser.id
-            }, date: new Date()
+        newMessage.save(() => {
+            message.findById(newMessage._id).populate({
+                path: "author",
+                select: {
+                    name: 1
+                }
+            }).then((data) =>   io.to(ROOMS.ROOM_MAIN).emit("new message", data))
         });
+
     });
 
+
+    socket.on("read message", async (messageId) => {
+        const readMessage = await message.findOneAndUpdate({_id : messageId}, {read: true})
+        io.to(ROOMS.ROOM_MAIN).emit("read message", readMessage._id);
+    });
 
     socket.on("disconnect", () => {
         const currentUser = users.find(user => user.session === socket.id);

@@ -10,7 +10,7 @@ module.exports = async (req, res) => {
             userId: oldUser._id,
             name: oldUser.name
         }, process.env.SECRET_JWT);
-        return res.json({token});
+        return res.json({token, user: oldUser});
     } else if(oldUser && oldUser.online) {
         return res.status(404).json({message: "no"})
     }
@@ -20,6 +20,6 @@ module.exports = async (req, res) => {
         userId: newUser._id,
         name: newUser.name
     }, process.env.SECRET_JWT);
-    return res.json({token});
+    return res.json({token, user: newUser});
 
 };
