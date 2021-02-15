@@ -66,9 +66,8 @@ io.use((socket, next) => {
             content: data.content,
             author: currentUser.id
         });
-        if (/[https:\/\/www.youtube.com\/watch\?v=]/ig.test(data.content)){
+        if (data.content.indexOf("https://www.youtube.com/watch?v=") !== -1){
             newMessage.video = data.content.replace(/.*https:\/\/www.youtube.com\/watch\?v=/gi, "").replace(/&.+$/gi, "");
-            console.log(newMessage.video);
         }
         newMessage.save(() => {
             message.findById(newMessage._id).populate({
