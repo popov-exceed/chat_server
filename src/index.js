@@ -47,7 +47,7 @@ io.use((socket, next) => {
     socket.join(ROOMS.ROOM_MAIN);
     console.log("success connect")
     const onlineUsers = await user.find({online: true});
-    const lastsMessages = await message.find().populate({
+    const lastsMessages = await message.find().sort({date: -1}).limit(10).sort({date: 1}).populate({
         path: "author",
         select: {
             name: 1
@@ -66,8 +66,9 @@ io.use((socket, next) => {
             content: data.content,
             author: currentUser.id
         });
-        if (/https:\/\/www.youtube.com\/watch\?v=/ig.test(data.content)){
-            newMessage.video = data.content.replace(/https:\/\/www.youtube.com\/watch\?v=/gi, "")
+        if (/[https:\/\/www.youtube.com\/watch\?v=]/ig.test(data.content)){
+            newMessage.video = data.content.replace(/.*https:\/\/www.youtube.com\/watch\?v=/gi, "")
+            console.log(newMessage.video);
         }
         newMessage.save(() => {
             message.findById(newMessage._id).populate({
