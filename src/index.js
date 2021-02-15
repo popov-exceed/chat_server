@@ -8,6 +8,7 @@ const router = require("./routes/auth");
 const jwt = require("jsonwebtoken");
 const {user, message} = require("./db/models");
 
+const PORT = process.env.PORT || 8000;
 
 const ROOMS = {
     ROOM_MAIN : "ROOM_MAIN"
@@ -23,7 +24,7 @@ app.use("/", router);
 
 const users = [];
 
-const server = app.listen(8000, () => console.log("Server start"));
+const server = app.listen(PORT, () => console.log("Server start"));
 
 connectToDb(process.env.DB_CONNECTION);
 
