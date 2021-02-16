@@ -12,7 +12,7 @@ module.exports = async (req, res) => {
         }, process.env.SECRET_JWT);
         return res.json({token, user: oldUser});
     } else if(oldUser && oldUser.online) {
-        return res.status(404).json({message: "no"})
+        return res.status(409).json({message: "This user already online"})
     }
     const newUser = new user({name: req.body.name});
     await newUser.save();
